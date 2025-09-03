@@ -1,0 +1,53 @@
+
+services:
+  app:
+    build: ./app
+    container_name: rtcomic_app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/var/www/html
+    depends_on:
+      - db
+      - mailhog
+
+  db:
+    image: mysql:8.0
+    container_name: rtcomic_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: rtcomic
+      MYSQL_USER: rtuser
+      MYSQL_PASSWORD: rtpwd
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: rtcomic_pma
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: rtcomic_mailhog
+    ports:
+      - "8025:8025"   # Web UI
+    # SMTP listens on 1025 internally; PHP will connect to host "mailhog" port 1025
+
+volumes:
+  dbdata:
+
+
